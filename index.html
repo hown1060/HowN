@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>布丁計算機</title>
+    <style>
+        body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    margin: 0;
+    color: #333;
+}
+
+.container {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 450px; /* 模擬手機螢幕寬度 */
+}
+
+h1 {
+    text-align: center;
+    color: #a0522d; /* 咖啡色調 */
+    margin-bottom: 25px;
+    font-size: 1.8em;
+}
+
+.mode-selector {
+    display: flex;
+    margin-bottom: 20px;
+}
+
+.mode-selector button {
+    flex-grow: 1;
+    padding: 10px;
+    border: 1px solid #ccc;
+    background-color: #eee;
+    cursor: pointer;
+    font-size: 1em;
+    transition: all 0.2s;
+    border-radius: 8px;
+    margin: 0 5px;
+}
+
+.mode-selector button.active {
+    background-color: #f7a07c; /* 活潑的布丁色 */
+    color: white;
+    border-color: #f7a07c;
+    box-shadow: 0 2px 5px rgba(247, 160, 124, 0.4);
+}
+
+.input-section {
+    padding: 15px;
+    border: 1px dashed #ddd;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+#inputLabel {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: #555;
+}
+
+#inputValue {
+    width: 80%;
+    padding: 12px;
+    margin-bottom: 15px;
+    border: 2px solid #ccc;
+    border-radius: 6px;
+    font-size: 1.2em;
+    text-align: center;
+}
+
+.input-section button {
+    background-color: #a0522d;
+    color: white;
+    border: none;
+    padding: 10px 25px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 1.1em;
+    transition: background-color 0.3s;
+}
+
+.input-section button:hover {
+    background-color: #8b4513;
+}
+
+.results {
+    background-color: #fff7e6; /* 淺黃色背景，強調結果 */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+}
+
+.results h3 {
+    text-align: center;
+    color: #a0522d;
+    margin-top: 0;
+    border-bottom: 2px solid #f7a07c;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dotted #ccc;
+    font-size: 1.1em;
+}
+
+.result-item span {
+    font-weight: bold;
+    color: #36454F; /* 深色文字 */
+}
+
+.total-output {
+    font-size: 1.2em;
+    background-color: #f7a07c;
+    color: white;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 5px;
+}
+
+.total-output span {
+    color: white;
+}
+
+.note {
+    text-align: center;
+    font-size: 0.85em;
+    color: #777;
+    margin-top: 20px;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍮 手工布丁份量計算機</h1>
+        
+        <div class="mode-selector">
+            <button id="modeBtnEgg" class="active">依蛋黃量計算</button>
+            <button id="modeBtnCount">依布丁數計算</button>
+        </div>
+        
+        <div id="inputSection" class="input-section">
+            <label id="inputLabel" for="inputValue">🥚 請輸入蛋黃份量 (g):</label>
+            <input type="number" id="inputValue" value="65" min="1">
+            <button onclick="calculate()">開始計算</button>
+        </div>
+        
+        <div class="results">
+            <h3>所需食材份量</h3>
+            <div class="result-item">蛋黃: <span id="resEggYolk">0</span> g</div>
+            <div class="result-item">蛋白: <span id="resEggWhite">0</span> g</div>
+            <div class="result-item">白砂糖: <span id="resSugar">0</span> g</div>
+            <div class="result-item">牛奶: <span id="resMilk">0</span> ml</div>
+            <hr>
+            <div class="result-item total-output">預計產出: <span id="resOutput">0</span> 顆布丁</div>
+        </div>
+
+        <p class="note">※ 基準食譜比例 (65g 蛋黃 / 5.2 顆布丁)</p>
+    </div>
+
+    <script>
+        // --- 核心比例數據 ---
+const RATIO_EGG_YOLK = 65;
+const RATIO_EGG_WHITE = 90;
+const RATIO_SUGAR = 40;
+const RATIO_MILK = 420;
+const RATIO_OUTPUT_COUNT = 5.2;
+
+// --- 介面元件參考 ---
+const inputLabel = document.getElementById('inputLabel');
+const inputValue = document.getElementById('inputValue');
+const modeBtnEgg = document.getElementById('modeBtnEgg');
+const modeBtnCount = document.getElementById('modeBtnCount');
+const resOutput = document.getElementById('resOutput');
+
+let currentMode = 'eggYolk'; // 預設模式為 'eggYolk'
+
+// --- 模式切換邏輯 ---
+function setMode(mode) {
+    currentMode = mode;
+    
+    // 更新按鈕樣式
+    modeBtnEgg.classList.remove('active');
+    modeBtnCount.classList.remove('active');
+    
+    if (mode === 'eggYolk') {
+        inputLabel.textContent = '🥚 請輸入蛋黃份量 (g):';
+        inputValue.value = '65'; // 恢復預設值
+        modeBtnEgg.classList.add('active');
+    } else {
+        inputLabel.textContent = '🍮 請輸入想製作的布丁數量 (顆):';
+        inputValue.value = '5.2'; // 恢復預設值
+        modeBtnCount.classList.add('active');
+    }
+    calculate(); // 切換模式後自動計算
+}
+
+modeBtnEgg.addEventListener('click', () => setMode('eggYolk'));
+modeBtnCount.addEventListener('click', () => setMode('count'));
+
+
+// --- 核心計算函式 ---
+function calculate() {
+    const input = parseFloat(inputValue.value);
+
+    // 檢查輸入是否有效
+    if (isNaN(input) || input <= 0) {
+        alert('請輸入有效的數字！');
+        return;
+    }
+
+    let eggYolk, eggWhite, sugar, milk, outputCount;
+
+    if (currentMode === 'eggYolk') {
+        // 模式 A: 依蛋黃量計算
+        const multiplier = input / RATIO_EGG_YOLK;
+        
+        eggYolk = input;
+        eggWhite = input * (RATIO_EGG_WHITE / RATIO_EGG_YOLK);
+        sugar = input * (RATIO_SUGAR / RATIO_EGG_YOLK);
+        milk = input * (RATIO_MILK / RATIO_EGG_YOLK);
+        outputCount = multiplier * RATIO_OUTPUT_COUNT;
+
+    } else {
+        // 模式 B: 依布丁數量計算
+        const multiplier = input / RATIO_OUTPUT_COUNT;
+
+        eggYolk = RATIO_EGG_YOLK * multiplier;
+        eggWhite = RATIO_EGG_WHITE * multiplier;
+        sugar = RATIO_SUGAR * multiplier;
+        milk = RATIO_MILK * multiplier;
+        outputCount = input;
+    }
+
+    // --- 顯示結果到畫面上 ---
+    document.getElementById('resEggYolk').textContent = eggYolk.toFixed(0); // 蛋黃取整數
+    document.getElementById('resEggWhite').textContent = eggWhite.toFixed(0); // 蛋白取整數
+    document.getElementById('resSugar').textContent = sugar.toFixed(0); // 砂糖取整數
+    document.getElementById('resMilk').textContent = milk.toFixed(0); // 牛奶取整數
+    resOutput.textContent = outputCount.toFixed(1); // 產出數量保留一位小數
+}
+
+// 頁面加載完成後執行第一次計算
+document.addEventListener('DOMContentLoaded', calculate);
+
+  </script>
+</body>
+</html>
